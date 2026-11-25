@@ -2,7 +2,9 @@
 
 Pseudo-Steve was a question-answering program that Stephen Willson (now
 Stephen Clarke-Willson) wrote in MLISP on the UC Irvine DECsystem-10 for
-ICS 199 in Spring 1980, a research course with Richard Granger.
+ICS 199, an independent research course, in Spring 1980. The idea was
+entirely Steve's. Richard Granger, who supervised the course, reviewed some
+of its sessions along the way.
 
 Steve was the TA for ICS 145, the compiler construction lab taught by Ken
 Hertzler. Pseudo-Steve answered the routine questions for him: due dates,
@@ -48,7 +50,7 @@ renderings of the RUNOFF sources.
 | `PS.EXE` | the saved executable, 31 Oct 1980 (36-bit core-dump format) |
 | `*.QRZ` | eight real student sessions, 7-9 April 1980 |
 | `NPS.LOG`, `PS.LOG`, `GRANGE.LOG`, `NGRANG.LOG`, `LONG.LOG`, `621.LOG` | more sessions |
-| `PS1.LOG` | an April session mailed to Granger, with his comments and Steve's replies |
+| `PS1.LOG` | an April session Steve mailed to Granger for review, with Granger's comments and Steve's replies |
 | `1980-03-first-try/` | March 1980 first attempt, script-based (`PSTEVE.MLI`) |
 | `OLDPS/`, `versions/` | older copies, by date |
 
@@ -61,8 +63,9 @@ The program went through four generations:
 - **June 12.** The five inference rules described in the write-up.
 - **October 23.** "RULES 1 & 2 & 3 WERE BORING -- DELETED OCT 21, 1980".
 
-Granger's note at the end of `PS1.LOG` set the direction: "IT'S THE ENGLISH
-USAGES THAT'S GOING TO BE CRUCIAL."
+In `PS1.LOG`, Granger's review was mixed ("YUK" on one answer, "TERRIFFIC"
+on another), and he asked for more sessions that tested a wider range of
+English.
 
 ## About the port
 
