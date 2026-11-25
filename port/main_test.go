@@ -23,6 +23,7 @@ func TestPaperRun(t *testing.T) {
 	p := &PS{tree: tree, version: "jun", echo: true,
 		out: bufio.NewWriter(&out), in: bufio.NewScanner(strings.NewReader(string(in)))}
 	p.Run()
+	t.Logf("replayed the paper's annotated run:\n%s", out.String())
 	if out.String() != string(want) {
 		t.Errorf("output differs from paper run:\n%s", out.String())
 	}

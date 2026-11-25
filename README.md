@@ -28,7 +28,7 @@ a row land on the same answer, it guesses that it misunderstood one of them.
 Type `help` for help, `1` to see the last search path, `2` to see the
 two-search memory, and `thank you` to quit.
 
-`go test` replays the "Annotated Run of Pseudo-Steve" from the June 1980
+`go test` (or `go test -v` to see the conversation) replays the "Annotated Run of Pseudo-Steve" from the June 1980
 write-up. All 24 answers match the paper word for word.
 
 ## What's here
