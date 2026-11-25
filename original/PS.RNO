@@ -1,0 +1,606 @@
+.c
+Pseudo-Steve
+.c
+By
+.c
+Stephen Willson
+.blank 2
+.c
+ICS 199 SQ 80 (Granger)
+.sp 2
+.ap
+.blank 3
+This paper
+addresses the issue of "intelligently" searching a knowledge tree.
+Given a history of the search patterns specified for a tree, it uses this
+history to infer certain intentions and/or possible errors on the part
+of the searcher.
+        The first appendix contains a listing of the tree
+used by Pseudo-Steve to track down information.  The search begins at the
+top-most node and then proceeds down the tree as certain keywords are
+encountered.  The keywords are arranged as hierarchically as my mind could
+arrange them, with more general categories near the top of the tree and
+information more specific to each category stored in the lower branches of
+the tree.  If the search terminates at a leaf, the search is considered
+a "hit", but if the search terminates at some higher level of the tree,
+then it is considered a "miss".
+        By using historical information about "hits" and "misses", and
+also a trace of the last path down the tree, the program attempts to
+infer the missing information not supplied by the user.  Below, the
+second question is answered by assuming the user meant "Steves office hours"
+because not enough information was contained in the question to make a
+"hit".
+        The system is written in UCI Lisp.
+.sp 1.b
+.lit
+        Yes?  When are Kens office hours
+          Ken's office hours are Tuesday and Thursday from 1:30-2:00
+        Yes?  What about Steves
+          Steve's office hours are Tuesday and Thursday from 11:00-12:00
+.el
+.sp 2.b
+        The program also looks at patterns of hits and misses to (hopefully)
+give the user a hint on how to instruct the program to continue the search.
+Below, the program guesses that the program must have mis-interpreted a
+question because the last two questions were hits to the same answer.
+.sp 1.b
+.lit
+        Yes?  What is assignment four
+          Assignment four is the compiler
+        Yes?  When is it due
+          Assignment four is due June 7 at the beginning of class
+        Yes?  When is the compiler due
+          Either I just responded to that,
+          or we aren't communicating.
+          Perhaps you should try using different words
+          that have meanings I can separate easier.
+.el
+.sp 2.b
+        Note:  the program assumes a co-operative user.
+        The following section contains the five rules the program
+uses to determine the type of response that is appropriate.  Each
+rule assumes the previous rules have been checked and found not
+to be true.
+.b.c
+Pseudo-Steve's Inference Rules
+.lm+10
+.i-5
+Rule 1: If the answer to the previous two questions was exactly the same,
+and the answer was a "hit" both times,
+then infer that the user meant something different in one of the questions.
+.b
+.i-5
+Response: Either I just responded to that or
+we're not communicating here.
+Perhaps you should try using different words
+that have meanings I can separate easier.
+.b
+.i-5
+Rule 2: If the answer to the previous two questions was exactly the same,
+and the answer was a "miss" both times,
+then infer that the user is leaving out some critical (high level)
+piece of searching information.
+.b
+.i-5
+Response: I think you are leaving out some contextual information
+that I should know in order to figure out what you mean.
+Try giving me more context.
+.b
+.i-5
+Rule 3: If the most recent answer was a "miss", then
+infer that the user wants more information to guide his search.
+.b.i-5
+Response: Maybe it will help if I tell you that
+<information from node where search terminated>
+.b
+.i-5
+Rule 4: If the most recent answer was a hit, then
+infer that this is the correct answer to his question.
+.b.i-5
+Response:  <information from node where search terminated>
+.b
+.i-5
+Rule 5: If none of the other rules work, then infer that the
+question is very "outside" the domain, or Pseudo-Steve doesn't
+know enough words.
+.b
+.i-5
+Response:  I can't figure out the answer, sorry, next question!
+.lm-10
+.b.c
+Annotated Run of Pseudo-Steve
+        I was a TA for the compiler construction lab course,
+so that was the problem domain I chose to encode into the system.
+Most of the information came from the syllabus.  The text after the
+tilda ("~") is a comment which mentions which rule was used.
+.b.sp 1
+.lit
+ 
+Hello, I'm Pseudo-Steve.  Type HELP for help.
+ 
+Yes? when is the compiler due
+ The compiler is due June 5 at the beginning of class.
+ 
+Yes? when is assignment four due                ~ The compiler assignment and
+  Either I just responded to that or            ~ assignment four are
+  we're not communicating here.                 ~ the same assignment
+  Perhaps you should try using different words
+  that have meanings I can separate easier.
+ 
+Yes? when is assignment three due               ~ Simple question
+ Assignment three will be due May 8th at the beginning of class.
+ 
+Yes? how about assignment two                   ~ Uses context information
+ Assignment two will be due April 24th at the beginning of class.
+ 
+Yes? how about assignment two available date    ~ Uses context information
+ Assignment two will be available April 10th.
+ 
+Yes? due                                        ~ Uses context information
+ Assignment two will be due April 24th at the beginning of class.
+ 
+Yes? due                                        ~ Indicates confusion about
+  Either I just responded to that or            ~ question (Rule 1)
+  we're not communicating here.
+  Perhaps you should try using different words
+  that have meanings I can separate easier.
+ 
+Yes? assignment two                             ~ Still traces a path to
+  Either I just responded to that or            ~ the same answer
+  we're not communicating here.
+  Perhaps you should try using different words
+  that have meanings I can separate easier.
+ 
+Yes? assignment three                           ~ Uses context information
+ Assignment three will be due May 8th at the beginning of class.
+ 
+Yes? what is it                                 ~ Uses context information
+ Assignment three is a design specification for the compiler.
+ 
+Yes? what is assignment one
+ Assignment one is a lexical analyzer.
+ 
+Yes? when                                       ~ Refers to assignment one,
+  Maybe it will help if I tell you that         ~ but doesn't specify enough
+ I only know when you get it and when its due.  ~ information to get to a leaf
+ 
+Yes? when is it due                             ~ The information is supplied
+ Assignment one will be due April 15th at the beginning of class.
+ 
+Yes? how much is it worth                       ~ More context information
+ Assignment one is worth ten percent of your grade.
+ 
+Yes? when do we get it back                     ~ Again
+ I don't know when or where the homework will be handed back.
+ 
+Yes? class meets when                           ~ A "hit"
+ The class meets Tuesdays and Thursdays from 2 to 3:30 pm.
+ 
+Yes? where                                      ~ Another "hit"
+ The class meets in room CS 193.
+ 
+Yes? why                                        ~ Can't answer this, so
+  Maybe it will help if I tell you that         ~ gives the user more
+ The class meets in room CS 193.                ~ information
+ 
+Yes? grunthead                                  ~ Another match
+ Sensors detect an unpleasant user, please behave.
+ 
+Yes? idiot                                      ~ "idiot" is a synonym
+  Either I just responded to that or
+  we're not communicating here.
+  Perhaps you should try using different words
+  that have meanings I can separate easier.
+ 
+Yes? who is ken                                 ~ Doesn't know much about
+  Maybe it will help if I tell you that         ~ Ken, but gives hints on
+ I only know about his office and the phone number.     ~ what it does know
+ 
+Yes? what is it                                 ~ Can't decide between
+  I think you are leaving out some contextual information       ~ office and
+  that I should know in order to figure out what you mean.      ~ phone number
+  Try giving me more context.
+ 
+Yes? what is the phone number                   ~ User supplies the information
+ Ken's extension is (714) 555-6480.
+ 
+Yes? where is his office                        ~ Still refers to Ken
+ Ken's office is in room CS 245.
+ 
+Yes? thank you                                  ~ Trapped by program to
+ You're welcome!                                ~ indicate end of session
+.el
+.sp 2.blank 2
+.c
+Issues not Addressed by Pseudo-Steve
+ 
+        The main feature lacking from Pseudo-Steve is some mechanism
+to look at the input question and determine if there are any important
+words still remaining in the question that haven't been used to guide
+the search, even though the search ends at a leaf.  For example,
+.b.sp 1
+.lit
+        Yes?  Whats the due date of assignment four
+.el
+.sp 2.blank 2
+will answer with
+.b.sp 1
+.lit
+          Assignment four is the compiler
+.el
+.blank 2.sp 2
+because the keyword "what" ("whats") appears in the list of keywords
+before "due".  If the program could inspect the input sentence and
+determine that there is ^&important\& unused information, then it could
+use that information to guide the search, and the ordering of information
+in each node of the tree would be less important.
+        I make no claims that Pseudo-Steve solves very many AI problems.
+I think it is, however, an interesting implementation of a theoretical
+idea that could be expanded along more useful avenues.  Tree searches are
+done frequently every day by many systems, and to be able to have the
+system infer intelligently about how the search could proceed could be
+of real convenience to data-base users everywhere.
+.c
+Appendix
+.c
+The Pseudo-Steve Knowledge Tree
+        The tree consists of a bunch of atoms whose values are
+names of other atoms (which contain subtrees) and keywords that
+indicate that the search should continue down that subtree if the
+keyword is in the input text.  After a keyword is matched, it is
+removed from the input text.  "NIL" as an atom name indicates a leaf
+of the subtree has been reached, and the searching ends.
+The question, "When are Steves office hours", causes the following
+trace: [Top, Steve-stuff,
+Steves-office, Steves-office-hours, Steves-office-hours-time].
+.sp 1
+.lit
+(DEFV TOP
+ ((SIMULA-STUFF SIMULA PASCAL LANGUAGE LANGUAGES)
+  (THE-COMPILER COMPILER PARSER PARSING)
+  (STEVE-STUFF STEVE STEVES YOUR YOU WILLSON WILLSONS)
+  (MONEY-STUFF MONEY DOLLARS CASH)
+  (EXAM-STUFF EXAM QUIZ TEST MIDTERM FINAL)
+  (KEN-STUFF KEN KENS HERTZLER HERTZLERS TEACHERS INSTRUCTORS)
+  (CLASS-STUFF CLASS)
+  (ASSIGNMENT-STUFF ASSIGNMENT ASSIGNMENTS HOMEWORK HOMEWORKS)
+  (MAKE-AN-APPOINTMENT APPOINTMENT SEE TALK)
+  (DIS-SECTION DISCUSSION LABS DISCUSSIONS LAB)
+  (SNOTTY-REPLY-TEXT BYE)
+  (MACH-REPLY-TEXT QUIT EXIT Q E)
+  (MINI-145-STUFF MINI-145 MINI)
+  (LIFE-STUFF LIFE LIVING BEING EXISTING)
+  (BAD-WORDS IDIOT MORON TURKEY GRUNTHEAD)
+  (NIL "I only know about ICS 145 SQ 80 (the afternoon class)")))
+ 
+(DEFV SIMULA-STUFF
+ ((SIMULA-MANUAL MANUAL BOOK INSTRUCTIONS)
+  (LANG-FOR-CLASS USE WRITE WRITTEN USING WRITING)
+  (HOW-USE-SIMULA HOW)
+  (NIL "I know about where you can get the Simula manual
+and that you have to use Simula"))
+)
+ 
+(DEFV SIMULA-MANUAL
+ ((OBTAIN-SIMULA-MANUAL OBTAIN GET BUY)
+  (SIMULA-MANUAL-COST COST MUCH AMOUNT)
+  (NIL "I know about buying Simula manuals and how much they cost")))
+ 
+(DEFV OBTAIN-SIMULA-MANUAL
+ ((SHOULD-OBTAIN-SIMULA-MANUAL SHOULD)
+  (NIL "Simula manuals can be bought from the computing facility")))
+ 
+(DEFV SHOULD-OBTAIN-SIMULA-MANUAL
+ ((NIL "Whether to buy a Simula manual is a decision only you can make"))
+)
+ 
+(DEFV SIMULA-MANUAL-COST
+ ((NIL "The whole set of manuals is $20.00")))
+ 
+(DEFV LANG-FOR-CLASS
+ ((NIL "All programming assignments shall be written in Simula")))
+ 
+(DEFV HOW-USE-SIMULA
+ ((NIL "Look in the manual--it's too complicated for me")))
+ 
+(DEFV THE-COMPILER
+ ((COMPILER-DUE-DATE TIME WHEN)
+  (COMPILER-TYPE TYPE KIND)
+  (NIL "I know what type of compiler you have to write,
+and when it is due")))
+ 
+(DEFV COMPILER-DUE-DATE
+ ((NIL "The compiler is due June 5 at the beginning of class")))
+ 
+(DEFV COMPILER-TYPE
+ ((NIL "Floyd-Evans is the type of parser you will write")))
+ 
+(DEFV STEVE-STUFF
+ ((STEVES-OFFICE OFFICE)
+  (STEVES-EXT EXTENSION PHONE NUMBER)
+  (STEVES-AVAILABLE SEE AVAILABLE AVAILBLE TALK)
+  (NIL "I know about when Steve is available,
+and where his office is, and his office phone number")))
+ 
+(DEFV STEVES-OFFICE
+ ((STEVES-OFFICE-HOURS HOURS)
+  (STEVES-OFFICE-LOCATION LOCATION WHERE)
+  (STEVES-EXT EXTENSION PHONE)
+  (NIL "I know Steve's office location and the phone number,
+and about his office hours")))
+ 
+(DEFV STEVES-OFFICE-HOURS
+ ((STEVES-HOURS-HELD-AT LOCATION WHERE)
+  (STEVES-OFFICE-HOURS-TIME TIME WHEN)
+  (NIL "I know when and where Steve's office hours are")))
+ 
+(DEFV STEVES-HOURS-HELD-AT
+ ((NIL "Steve will hold office hours in room CS 308 (the terminal room)"))
+)
+ 
+(DEFV STEVES-OFFICE-HOURS-TIME
+ ((NIL "Steve's office hours are Mondays from 3-4 and Thursdays from 7-8 pm~
+")))
+ 
+(DEFV STEVES-OFFICE-LOCATION
+ ((NIL "Steve's office is in room CS171
+but he will hold office hours in CS308")))
+ 
+(DEFV STEVES-EXT
+ ((NIL "Steve's phone extension is (714) 555-5892")))
+ 
+(DEFV STEVES-EXT
+ ((NIL "Steve's phone extension is (714) 555-5892")))
+ 
+(DEFV STEVES-AVAILABLE
+ ((STEVES-AVAILABLE-TIME TIME WHEN)
+  (STEVES-AVAILABLE-WHERE LOCATION WHERE)
+  (NIL "I know when and where Steve is available")))
+ 
+(DEFV STEVES-AVAILABLE-TIME
+ ((STEVES-OFFICE-HOURS WHEN HOURS TIME THEY THAT)
+  (NIL "I know when Steve's office hours are")))
+ 
+(DEFV STEVES-OFFICE-HOURS
+ ((STEVES-HOURS-HELD-AT LOCATION WHERE)
+  (STEVES-OFFICE-HOURS-TIME TIME WHEN)
+  (NIL "I know when and where Steve's office hours are")))
+ 
+(DEFV STEVES-HOURS-HELD-AT
+ ((NIL "Steve will hold office hours in room CS 308 (the terminal room)"))
+)
+ 
+(DEFV STEVES-OFFICE-HOURS-TIME
+ ((NIL "Steve's office hours are Mondays from 3-4
+and Thursdays from 7-8 pm")))
+ 
+(DEFV STEVES-AVAILABLE-WHERE
+ ((NIL "In room CS 308 during office hours, or by special arrangement"))
+)
+ 
+(DEFV MONEY-STUFF
+ ((AMOUNT-OF-MONEY AMOUNT MUCH SPEND)
+  (NIL "I can't say how much you've spent")))
+ 
+(DEFV AMOUNT-OF-MONEY
+ ((NIL "You have $100.00 for all of the assignments")))
+ 
+(DEFV EXAM-STUFF
+ ((EXAM-ANSWER TIME WHEN LOCATION WHERE THERE BE HAVE)))
+ 
+(DEFV EXAM-ANSWER
+ ((NIL "There are no tests in this class")))
+ 
+(DEFV KEN-STUFF
+ ((KENS-OFFICE OFFICE)
+  (KENS-EXT EXTENSION PHONE NUMBER)
+  (NIL "I only know about his office and the phone number")))
+ 
+(DEFV KENS-OFFICE
+ ((KENS-OFFICE-HOURS HOURS)
+  (KENS-OFFICE-LOCATION LOCATION WHERE)
+  (KENS-EXT EXTENSION PHONE NUMBER)
+  (NIL "I know when Ken's office hours are, and where, and his extension"))
+)
+ 
+(DEFV KENS-OFFICE-HOURS
+ ((KENS-OFFICE-LOCATION LOCATION WHERE)
+  (KENS-OFFICE-HOURS-TIME TIME WHEN)
+  (NIL "I only know when and where Ken's office hours are")))
+ 
+(DEFV KENS-OFFICE-LOCATION
+ ((NIL "Ken's office is in room CS 245")))
+ 
+(DEFV KENS-OFFICE-HOURS-TIME
+ ((NIL "Ken's office hours are Tuesdays and Thurdays from 1:30-2:00")))
+ 
+(DEFV KENS-OFFICE-LOCATION
+ ((NIL "Ken's office is in room CS 245")))
+ 
+(DEFV KENS-EXT
+ ((NIL "Ken's extension is (714) 555-6480")))
+ 
+(DEFV KENS-EXT
+ ((NIL "Ken's extension is (714) 555-6480")))
+ 
+(DEFV CLASS-STUFF
+ ((OTHER-CLASS OTHER EVENING)
+  (CLASS-TIME TIME WHEN)
+  (CLASS-LOCATION LOCATION WHERE)
+  (CLASS-NAME WHAT)
+  (CLASS-TEACHER TEACHER TEACHES INSTRUCTS INSTRUCTOR PROFESSOR)
+  (NIL "I know about when and where the class meets and who teaches it"))
+)
+ 
+(DEFV OTHER-CLASS
+ ((NIL "This class and the other class don't mix")))
+ 
+(DEFV CLASS-TIME
+ ((NIL "The class meets Tuesdays and Thursdays from 2 to 3:30 pm")))
+ 
+(DEFV CLASS-LOCATION
+ ((NIL "The class meets in room CS 193")))
+ 
+(DEFV CLASS-NAME
+ ((NIL "ICS-145 is the only class I know about")))
+ 
+(DEFV CLASS-TEACHER
+ ((NIL "Ken Hertzler is the instructor for ICS-145")))
+ 
+(DEFV ASSIGNMENT-STUFF
+ ((HOMEWORK-LOCATION WHERE)
+  (GET-HOME-WORK-BACK BACK RETURNED)
+  (HOMEWORK-NECESSARY HAVE)
+  (ASS-1-ANS 1. FIRST ONE LEXICAL)
+  (ASS-2-ANS 2. SECOND TWO PARSER SYNTAX)
+  (ASS-3-ANS 3. THIRD THREE DESIGN SPEC SPECIFICATION)
+  (ASS-4-ANS 4. FOURTH FOUR COMPILER LATEST)
+  (NO-LATE-ASS LATE)
+  (NIL "I know about the four assignments only")))
+ 
+(DEFV HOMEWORK-LOCATION
+ ((RETURNED-HOMEWORK-LOC BACK RETURNED) (TURNED-IN-HOMEWORK-LOC IN TURNED))
+)
+ 
+(DEFV RETURNED-HOMEWORK-LOC
+ ((NIL "Ask Ken in class about each assignment")))
+ 
+(DEFV TURNED-IN-HOMEWORK-LOC
+ ((NIL "The homework is due in class at the beginning of class")))
+ 
+(DEFV GET-HOME-WORK-BACK
+ ((NIL "I don't know when or where the homework will be handed back")))
+ 
+(DEFV HOMEWORK-NECESSARY
+ ((NIL "This is a lab course.  Of course you must do the homework")))
+ 
+(DEFV ASS-1-ANS
+ ((ASS-1-TIMES TIME WHEN)
+  (ASS-1-IS WHAT)
+  (ASS-1-WORTH WORTH COUNT)
+  (NIL "I know when assignment one is available, and what its worth
+and what it is")))
+ 
+(DEFV ASS-1-TIMES
+ ((ASS-1-GIVEN-OUT AVAILABLE AVAILBLE OUT GIVEN GET)
+  (ASS-1-DUE DUE TURNED IN)
+  (NIL "I only know when you get it and when its due")))
+ 
+(DEFV ASS-1-GIVEN-OUT
+ ((NIL "Assignment one will be available April first")))
+ 
+(DEFV ASS-1-DUE
+ ((NIL "Assignment one will be due April 15th at the beginning of class"))
+)
+ 
+(DEFV ASS-1-IS
+ ((NIL "Assignment one is a lexical analyzer")))
+ 
+(DEFV ASS-1-WORTH
+ ((NIL "Assignment one is worth ten percent of your grade")))
+ 
+(DEFV ASS-2-ANS
+ ((ASS-2-TIMES TIME WHEN)
+  (ASS-2-IS WHAT)
+  (ASS-2-WORTH WORTH COUNT)
+  (NIL "I only know when you get it, when it's due,
+what it is and what it's worth")))
+ 
+(DEFV ASS-2-TIMES
+ ((ASS-2-GIVEN-OUT AVAILABLE AVAILBLE OUT GIVEN GET)
+  (ASS-2-DUE DUE TURNED IN)
+  (NIL "I only know when you get it and when its due")))
+ 
+(DEFV ASS-2-GIVEN-OUT
+ ((NIL "Assignment two will be available April 10th")))
+ 
+(DEFV ASS-2-DUE
+ ((NIL "Assignment two will be due April 24th at the beginning of class"))
+)
+ 
+(DEFV ASS-2-IS
+ ((NIL "Assignment two is a syntax analyzer")))
+ 
+(DEFV ASS-2-WORTH
+ ((NIL "Assignment two is worth ten percent of your grade")))
+ 
+(DEFV ASS-3-ANS
+ ((ASS-3-TIMES TIME WHEN)
+  (ASS-3-IS WHAT)
+  (ASS-3-WORTH WORTH COUNT)
+  (NIL "I only know when you get it, what it is and what it's worth")))
+ 
+(DEFV ASS-3-TIMES
+ ((ASS-3-GIVEN-OUT AVAILABLE AVAILBLE GIVEN OUT GET)
+  (ASS-3-DUE DUE TURNED IN)
+  (NIL "I only know when it's due and available")))
+ 
+(DEFV ASS-3-GIVEN-OUT
+ ((NIL "Assignment three will be available April 17th")))
+ 
+(DEFV ASS-3-DUE
+ ((NIL "Assignment three will be due May 8th at the beginning of class"))
+)
+ 
+(DEFV ASS-3-IS
+ ((NIL "Assignment three is a design specification for the compiler")))
+ 
+(DEFV ASS-3-WORTH
+ ((NIL "Assignment three is worth thirty percent of your grade")))
+ 
+(DEFV ASS-4-ANS
+ ((ASS-4-TIMES TIME WHEN)
+  (ASS-4-IS WHAT)
+  (ASS-4-WORTH WORTH COUNT)
+  (NIL "I know when it's due, and available, and what it's worth")))
+ 
+(DEFV ASS-4-TIMES
+ ((ASS-4-GIVEN-OUT AVAILABLE AVAILBLE GIVEN OUT GET)
+  (COMPILER-DUE-DATE DUE TURNED IN)
+  (NIL "I only know when it will be given out,
+and when it is due")))
+ 
+(DEFV ASS-4-GIVEN-OUT
+ ((NIL "Assignment four will be available April 29th")))
+ 
+(DEFV COMPILER-DUE-DATE
+ ((NIL "The compiler is due June 5 at the beginning of class")))
+ 
+(DEFV ASS-4-IS
+ ((NIL "Assignment four is the compiler")))
+ 
+(DEFV ASS-4-WORTH
+ ((NIL "Assignment four is worth fifty percent of your grade")))
+ 
+(DEFV NO-LATE-ASS
+ ((NIL "No late homework will be accepted")))
+ 
+(DEFV MAKE-AN-APPOINTMENT
+ ((NIL "I can't do anything about appointments, sorry")))
+ 
+(DEFV DIS-SECTION
+ ((NIL "There are no discussion sections")))
+ 
+(DEFV SNOTTY-REPLY-TEXT
+ ((NIL "Say 'thank you' first")))
+ 
+(DEFV MACH-REPLY-TEXT
+ ((NIL "I'm not some damn fool machine")))
+ 
+(DEFV MINI-145-STUFF
+ ((MINI-145-WHAT WHAT) (NIL "Be more specific please about mini-145")))
+ 
+(DEFV MINI-145-WHAT
+ ((NIL "Mini-145 the source language your compiler will accept")))
+ 
+(DEFV LIFE-STUFF
+ ((MEANING-OF-LIFE MEANING PURPOSE REASON)))
+ 
+(DEFV MEANING-OF-LIFE
+ ((NIL "The meaning of life is simple, but each must find it for himself"))
+)
+ 
+(DEFV BAD-WORDS
+ ((NIL "Sensors detect an unpleasant user, please behave")))
+.el
+ 

@@ -1,0 +1,560 @@
+
+
+
+	                          Pseudo-Steve
+	                               By
+	                        Stephen Willson
+
+	                    Copyright (c) April 1980
+
+
+	                            Overview
+
+
+	       This paper describes the program "Pseudo-Steve",  which
+
+	  I   believe   has   several   very  interesting  properties.
+
+	  Pseudo-Steve  is  a  program  which  I  believe  models   my
+
+	  organizational   style   to   some   extent.   It  has  been
+
+	  pre-programmed with certain information about ICS  145.   It
+
+	  is  capable  of  accessing this information in a logical and
+
+	  consistent manner despite the natural language form  of  the
+
+	  input questions.
+
+
+	       I claim that everything in life is  context  sensitive.
+
+	  This  program  uses  the  context  of a conversation to help
+
+	  retrieve information and to resolve the meanings  of  words.
+
+	  I  also  claim  that  it is useful to view the communication
+
+	  process as the process of instructing another person/machine
+
+	  to  search for information or to store some information in a
+
+	  useful "place".
+
+
+	       The major data structure used by this  program  is  the
+
+	  tree.
+
+
+	                Sample Session with Pseudo-Steve
+
+	  
+	  [Hello, I'm Pseudo-Steve.  Type HELP for help.]
+	  
+	  [Yes?] when can i talk to steve
+	   During Steve's office hours, or by appointment.
+	  
+	                                                        Page 2
+
+
+	  [Yes?] when are the hours
+	   During Steve's office hours, or by appointment.
+	  
+	  [Yes?] when are the office hours
+	   Steve's office hours are Mondays from 3-4 and Thursdays from 7-8 pm.
+	  
+	  [Yes?] what about kens
+	   Ken's office hours are Tuesdays and Thurdays from 1:30-2:00.
+	  
+	  [Yes?] where
+	   Ken's office is in room CS 245.
+	  
+	  [Yes?] when is assignment two due
+	   Assignment two will be due April 24th at the beginning of class.
+	  
+	  [Yes?] when is it available
+	   Assignment two will be available April 10th.
+	  
+	  [Yes?] whats for dinner
+	  [I didn't understand the question, sorry.]
+	  
+	  [Yes?] how about assignment one
+	  [I'm not sure I understood.]
+	   Please be more specific about assignment one.
+	  
+	  [Yes?] when is it due
+	   Assignment one will be due April 15th at the beginning of class.
+	  
+	  [Yes?] thanks
+	   [You're welcome!]
+	  
+
+	                    The Tree and It's Import
+
+
+	       This system uses a  hierarchically  organized  tree  to
+
+	  store  the information.  The exact information stored in the
+
+	  tree is, I believe currently,  rather  arbitrary.   But  the
+
+	  nature  and  order that information is stored in the tree is
+
+	  crucial.  Here is a part of the tree that Pseudo-Steve uses:
+
+	  Steve-stuff
+	          Steves-office
+	                  Steves-office-hours
+	                          Steves-office-hours-time
+	                          Steves-office-hours-location
+	                  Steves-office-location
+	          Steves-extension
+
+	  Each level of indentation indicates a  level  of  increasing
+
+	                                                        Page 3
+
+
+	  detail  about  a topic.  The arrangement above is useful for
+
+	  parsing English, but other  structures  can  be  envisioned.
+
+	  Perhaps this one:
+
+	  Steve-stuff
+	          Steves-office-hours
+	                  Steves-office
+	                  Steves-office-hours-time
+	          Steves-extension
+
+	  The reason I use the  first  tree  and  not  the  second  is
+
+	  because  I hold my office hours in a different location than
+
+	  my office, and the system needs to be able  to  discriminate
+
+	  between these two possiblities.
+
+
+	       Getting from English to a Destination in the Tree
+
+
+	       The user types in an input question.  Instead of  using
+
+	  the  strict  word order of the sentence, the system looks to
+
+	  see if there is any information in the  sentence  that  will
+
+	  allow  it  to  disambiguate  between any of several possible
+
+	  higher-level subjects of discussion.  Some of  the  subjects
+
+	  Pseudo-Steve  can  answer questions about are the class, the
+
+	  assignments, the TA (me), or the instructor  (Ken).   If  no
+
+	  choice  can  be made (probably because the question that was
+
+	  input assumes some context) then the system  looks  back  to
+
+	  see  what the topic of discussion in the last statement was,
+
+	  and uses this information to pick a topic.   For  the  input
+
+	  question,
+
+	          "When are Steves office hours" 
+
+	  the  system  decides  that the main topic of the question is
+
+	  Steve-stuff.  Once the system has chosen the main  topic  of
+
+	                                                        Page 4
+
+
+	  the  question,  it focuses the search for the correct answer
+
+	  to the information stored in the  tree  "under"  the  parent
+
+	  node, in this case, "Steve-stuff".
+
+
+	       This process continues.  Under Steve-stuff, the  system
+
+	  wants  to  know if the question is about Steves-extension or
+
+	  Steves-office.  The key word  office  indicates  the  search
+
+	  should continue down the subtree that has information stored
+
+	  about Steves-office.  And so on.
+
+
+	                    Using a Previous Context
+
+
+	       Suppose the next input question is "Where".  The system
+
+	  once  again  starts  at the top of the tree and looks for an
+
+	  indication in the input  question  about  which  subtree  to
+
+	  search.   Finding  none,  it uses the path used last time to
+
+	  indicate where to search.   In  this  case,  Steve-stuff  is
+
+	  used.  The system continues to use this information whenever
+
+	  the input question is not helpful.  In this particular case,
+
+	  almost all the information comes from the previous context.
+
+
+	       Suppose the next input question is "What  about  Kens".
+
+	  The  system  uses  the  word  "Kens"  to  indicate  that the
+
+	  Ken-stuff  subtree  should  be  searched.   After  that,  no
+
+	  information  can  be used from the input sentence so all the
+
+	  search indicators are taken from the  context  of  the  last
+
+	  input  question.  The system naturally assumes that the user
+
+	  wishes to know about Ken's office hours location.
+
+	                                                        Page 5
+
+
+	       Let's look at  an  example  that  seems  surprising  at
+
+	  first.  Take the following dialog:
+
+	          When is Steve available?
+	          Steve is available during his office hours or by appointment.
+	          What about assignment two?
+	          Assignment two is a syntax analyzer.
+
+	  The first question  sets  up  the  context  of  interest  in
+
+	  availablity.   It  would  seem  reasonable  that  the second
+
+	  question might refer to when assignment  two  is  available.
+
+	  The  reason  the  system  doesn't  answer  that question and
+
+	  instead answers what assignment two is about is because  the
+
+	  system  was  able  to  guide  it's  search  for the required
+
+	  information because of the keyword,  "What",  so  it  didn't
+
+	  bother  to answer what the person might of meant.  But then,
+
+	  this is the type of mistake that people make all  the  time.
+
+	  The user could still respecify the search pattern by saying,
+
+	  "But when is it due",  also  a  perfectly  natural  sounding
+
+	  dialog, and the system will produce the correct answer.
+
+
+	                  Why the System is not an ATN
+
+
+	       My understanding of ATN's is that  the  input  text  is
+
+	  scanned  in  a  left  to  right  manner,  guiding the system
+
+	  through a state machine.  This process is clearly not a part
+
+	  of  my  system.  Also, as the system moves through the state
+
+	  machine it executes code to remember interesting facts about
+
+	  the   input   sentence.    My   system   has  none  of  this
+
+	  augmentation.
+
+
+	                                                        Page 6
+
+
+	                     What about Primitives?
+
+
+	       Nobody wants to spend the next one hundred years typing
+
+	  in very specific tree structures to a program like this one,
+
+	  to enable it to discriminate fine shades  of  meaning  where
+
+	  that  is  not necessary.  There are trees in campus park.  I
+
+	  can visualize any one of the group of trees over by  Bio-Sci
+
+	  without  any trouble.  I can visualize any one of the leaves
+
+	  from that tree.  In fact, I have no idea what  those  leaves
+
+	  REALLY look like, but I know what tree leaves look like, and
+
+	  since I have no reason to doubt my experience, I figure that
+
+	  the  leaves  COULD look like all the other leaves I've seen,
+
+	  so that's what I visualize.
+
+
+	       Another  example:   Visualize  a  phone  book,   opened
+
+	  randomly  to the middle.  Now tell me the fifth phone number
+
+	  in the left column of  the  right  hand  page,  and  who  it
+
+	  belongs   to.    It   seems  people  are  quite  capable  of
+
+	  visualizing a page from a phone book,  complete  with  phone
+
+	  numbers, but when they try to look closely and see just what
+
+	  it  is  they  have  visualized,  they  can't,  unless   they
+
+	  construct  something from their past experience.  One of the
+
+	  phone numbers COULD be my own, and I COULD recite it as  the
+
+	  answer to the question, but we all know that would be BS.
+
+
+	       What is the point?  The first example shows  that  even
+
+	  though  I know about trees in general, it is not necessarily
+
+	  true that I know ANYTHING about the leaves on the  trees  in
+
+	  campus  park.   Therefore,  in  this  case,  "leaves"  is  a
+
+	                                                        Page 7
+
+
+	  primitive.   The  second  example   illustrates   the   same
+
+	  principle.   "Phone  numbers" is a primitive.  You can't get
+
+	  anymore specific about phone numbers in this example.
+
+
+	              When is a Primitive not a Primitive?
+
+
+	       If I am a collector of modern art,  then  when  talking
+
+	  with  my  low-brow friends who know nothing of modern art, I
+
+	  can point to a painting and say to them, there is  a  modern
+
+	  art  style  painting.   If  I  am  talking  to my fellow art
+
+	  collectors, and I point to a painting and say to them, there
+
+	  is  a  modern  art  style  painting,  we will probably start
+
+	  discussing in more detail it's style in terms more  specific
+
+	  than simply, "that's modern art".
+
+
+	       In the first case, the category  heading  "modern  art"
+
+	  might  as  well  be  a primitive, but in the second case the
+
+	  category heading "modern  art"  is  used  only  to  set  the
+
+	  context for what's to come, conversationally.
+
+
+	       Whats the point?  A primitive can be called a primitive
+
+	  only if it's at a leaf of the knowledge tree.  It is clearly
+
+	  possible to extend the knowledge tree below  this  level  if
+
+	  necessary,  using  information from other parts of the tree.
+
+	  But then the so-called primitive  loses  it's  status  as  a
+
+	  primitive.
+
+
+	       We've seen this happen with  CD.   Take  the  primitive
+
+	  PTRANS.   Assume the case that corresponds to "Jack PTRANSed
+
+	  himself to the airport".
+
+	                                                        Page 8
+
+
+	          (PTRANS (actor Jack)
+	                  (object Jack)
+	                  (from ?)
+	                  (to airport))
+
+	  Such a tree  structure  indicates  that  Jack  went  to  the
+
+	  airport alright, but it doesn't specifiy enough information.
+
+	  Actually, it is much more informative as a category  heading
+
+	  about types of movement, though not necessarily one that can
+
+	  be used to parse English usefully.   Scripts,  plans,  goals
+
+	  and so on are also category headings.  If anything, a script
+
+	  is merely a short-hand for a zillion CD "primitives".  Goals
+
+	  are category headings for types of human behavior.
+
+
+	       So,  the  point  is:   forget   about   searching   for
+
+	  primitives.
+
+
+	                 It's the Structure that's Hard
+
+
+	       Every program I have had experience with is capable  of
+
+	  searching  some  pre-defined knowledge structure.  It is the
+
+	  same with Pseudo-Steve.  When coding up the system, I had to
+
+	  be  very careful about the structure I imposed on the facts,
+
+	  in order for the system to work.  All  the  intelligence  my
+
+	  system  demonstrates (or doesn't) is due directly to the job
+
+	  I did building the  knowledge  tree.   I  want  to  write  a
+
+	  program  that  can  build these trees in a useful manner.  I
+
+	  have a vague notion how to do this, but that's  for  another
+
+	  time.
+
+	                                                        Page 9
+
+
+	       If such a program  could  be  written,  than  it  could
+
+	  accept  a  story  and then answer questions about the story.
+
+	  Since it is easy to answer questions about a  topic  already
+
+	  understood,  we  can  guess  that the trick is to encode the
+
+	  information so that it  can  be  most  easily  and  usefully
+
+	  retrieved.
+
+
+	                  What Good is English Anyway?
+
+
+	       If our goal is  to  talk  to  the  machine  in  natural
+
+	  language,  then  we might consider the fact that people have
+
+	  been using English for many many years to specify  to  their
+
+	  fellow     men    descriptions    of    problems,    events,
+
+	  emotions--everything that people can  express.   It  is  not
+
+	  unreasonable  to guess that if it is true that language is a
+
+	  set of commands to search or modify the knowledge tree, then
+
+	  the  language  that  people already use is the one we should
+
+	  use for our machine.  I think that the  information  in  the
+
+	  machine  should  be organized to make this process feasible,
+
+	  and I have tried to model that in Pseudo-Steve.  Because  of
+
+	  the context sensitivity, it is possible to store very subtle
+
+	  meanings based on the  different  words  that  are  used  to
+
+	  convey a thought.
+
+
+	           Other Information is Implicit in the Tree
+
+
+	       When given the question, "whats for dinner", the system
+
+	  replies  that  it  didn't  understand  the question.  If the
+
+	  system  simply  followed  key  words   without   using   the
+
+	                                                       Page 10
+
+
+	  hierarchic  structure, then it might well answer "compiler".
+
+	  (It did once, in a very early version.) But it  is  possible
+
+	  to  use  the  structure  of  the tree to figure out that the
+
+	  system doesn't now the answer to the question.  How?  If the
+
+	  system gets to a node in the tree that has sub-branches, but
+
+	  no possible path down the tree is indicated,  and  there  is
+
+	  unused  information  in  the input question, then the system
+
+	  doesn't know the answer to whatever question was asked.   In
+
+	  "whats  for  dinner", the system can't make any progress, so
+
+	  it can say "I didn't understand the question or I don't know
+
+	  the  answer".   This  models  the  fact that people can very
+
+	  quickly determine what they don't know.
+
+
+	                            Summary
+
+
+	       It has been my experience that I arrage  informatin  in
+
+	  my mind in a hierarchic "knowledge tree", and that I use the
+
+	  context of an utterance to resolve the meaning of a word.  I
+
+	  have  written  and  demonstrated  a program that models that
+
+	  behavior.  Lastly, I claim that every event and  thought  in
+
+	  life  is  context sensitive and that if we wish to model the
+
+	  human mind we can and must model this  aspect  of  life.   I
+
+	  think  my program shows that contextual knowledge eliminates
+
+	  many otherwise  mind-boggling  problems  with  understanding
+
+	  natural language.
+

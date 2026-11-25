@@ -1,0 +1,8 @@
+.run ps
+(noprint @logout)
+(dskin truth)
+(excise)
+(sysclr)
+(initfn @ps)
+(exit)
+.save ps

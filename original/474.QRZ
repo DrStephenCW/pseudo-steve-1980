@@ -1,0 +1,65 @@
+
+[Hello, I'm Pseudo-Steve.  Type HELP for help.]
+
+[Yes?] 
+WHEN ARE STEVES OFFICE HOURS
+ Steve's office hours are Mondays from 3-4 and Thursdays from 7-8 pm.
+
+[Yes?] WHERE
+ Steve's office is in room CS171 but he will hold office hours in CS308.
+
+[Yes?] WHEN
+[I didn't understand the question, sorry.]
+
+[Yes?] 1
+[No history to print.]
+
+[Yes?] (PP STM)
+
+STM has no properties on PRETTYPROPS.
+
+ 
+
+[Yes?] (PP STM)
+
+STM has no properties on PRETTYPROPS.
+
+ 
+
+[Yes?] (TRACEV STM)
+
+(STM) 
+
+[Yes?] WHEN ARE STEVES OFFICE HORS
+[I'm not sure I understood.]
+ Please be more specific about Steve's office.
+
+[Yes?] 
+
+*(MLISP PS)
+
+
+*****
+
+*** Warning: function redefined: PS
+THINK 
+*** Warning: function redefined: GETQUEST
+
+*** Warning: function redefined: LOOK
+XREMOVE 
+*** Warning: function redefined: SAY
+
+*** Warning: function redefined: EXPLAINSEARCH
+
+*** Warning: function redefined: HELP
+
+*** Warning: function redefined: RF
+
+*** Warning: function redefined: RD
+
+*** Warning: function redefined: NOPRINT
+
+*****
+
+*(PS)
+Set STM to NIL

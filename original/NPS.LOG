@@ -1,0 +1,59 @@
+	OPSER TRANSACTION LOG
+
+	U C Irvine SY45(4) DL033	02-14-80
+
+8-APR-80	14:39:40	Job 28	[2360,1]
+
+*log [2360,1]
+!14:40:10(0)
+	U C Irvine DECsystem-1070
+	For information call (714)555-6530
+	JOB 50 U C Irvine SY45(4) DL033 TTY103
+!14:40:14(0)
+	[LGNJSP Other jobs same PPN:28]
+	1440	08-Apr-80	Tue
+	[No mail]
+	.
+*ru ps[2360,4]
+!14:40:30(0)
+	[Hello, I'm Pseudo-Steve.  Type HELP for help.]
+	[Yes?] 
+*help
+!14:40:33(0)
+	Hi.  I am Pseudo-Steve.  I was created to answer some of the dull boring
+	questions  that  the  real  Steve  does not like to answer over and over
+	again.  Ask me a question about the course and if I know  the  answer  I
+	will  tell you.  If I don't know the answer please send a message to the
+	real Steve so that he can update  my  memory  banks.   Please  obey  the
+	following rules:  Don't use punctuation marks and spell out numbers like
+	"one" and "twenty four".  Lastly, type "Thank you" when you're done.   I
+	hope I can be of service.
+	[Yes?] 
+*when will steve be in his office
+!14:40:49(0)
+	[I'm not sure I understood.]
+	Please be more specific about Steve's office.
+	[Yes?] 
+*when can i see him
+!14:40:56(0)
+	During Steve's office hours, or by appointment.
+	[Yes?] 
+*yeah but when
+!14:41:01(0)
+	During Steve's office hours, or by appointment.
+	[Yes?] 
+*what time damn it
+!14:41:08(0)
+	During Steve's office hours, or by appointment.
+	[Yes?] 
+*when can i see steve
+!14:41:15(0)
+	During Steve's office hours, or by appointment.
+	[Yes?] 
+*what is with you
+!14:41:20(0)
+	During Steve's office hours, or by appointment.
+	[Yes?] 
+*?OPRJRO Job(s) running on 0
+?OPRJRO Type ":KILL ALL" to kill the subjobs
+*:tlog

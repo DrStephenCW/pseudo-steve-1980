@@ -1,0 +1,5 @@
+.RUN MLISP
+(MLISP PS)
+(DSKIN TRUTH)
+(PS)
+
