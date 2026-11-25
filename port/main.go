@@ -174,6 +174,8 @@ type PS struct {
 	out     *bufio.Writer
 	in      *bufio.Scanner
 	echo    bool
+	helped  bool // HELPED
+	done    bool // said thank you
 
 	L       List   // the question (SPECIAL L)
 	current Atom   // CURRENT
@@ -202,13 +204,19 @@ func (p *PS) msg(args ...any) {
 
 const T = true
 
-func (p *PS) Run() {
+// Start prints the greeting and the first prompt (PS, before the loop).
+func (p *PS) Start() {
 	p.msg(T, "Hello, I'm Pseudo-Steve.  Type HELP for help.", T)
-	for {
-		l, ok := p.getquest()
-		if !ok {
-			return
-		}
+	p.msg(T, "Yes? ")
+}
+
+// Line handles one line of input: the body of GETQUEST plus one pass of
+// the loop in PS. It returns true when the user has said thank you.
+func (p *PS) Line(line string) bool {
+	if p.echo {
+		p.msg(line, T)
+	}
+	if l, ok := p.getquest(line); ok {
 		p.L = l
 		p.current = "TOP"
 		p.search = nil
@@ -218,7 +226,22 @@ func (p *PS) Run() {
 			p.osearch = p.osearch[:2]
 		}
 		p.analyze()
+	} else if p.done {
+		return true
 	}
+	p.msg(T, "Yes? ")
+	return false
+}
+
+// Run is the terminal version: read lines until "thank you" or EOF.
+func (p *PS) Run() {
+	p.Start()
+	for p.in.Scan() {
+		if p.Line(p.in.Text()) {
+			return
+		}
+	}
+	p.msg(T)
 }
 
 // helpers for the OSEARCH[i,1] and CAR LAST(OSEARCH[i]) idioms
@@ -288,54 +311,41 @@ func lineread(s string) List {
 	return l
 }
 
-func (p *PS) getquest() (List, bool) {
-	for {
-		p.msg(T, "Yes? ")
-		if !p.in.Scan() {
-			p.msg(T)
-			return nil, false
-		}
-		line := p.in.Text()
-		if p.echo {
-			p.msg(line, T)
-		}
-		if strings.HasPrefix(strings.TrimSpace(line), "(") {
-			// CONSP L[1]: the original EVALed it as Lisp (a back door for
-			// the author). There is no Lisp here.
-			p.msg("[no Lisp in this port]", T, T)
-			continue
-		}
-		l := lineread(line)
-		if len(l) == 0 {
-			l = List{} // LINEREAD would wait for more input; treat as empty
-		}
-		switch {
-		case len(l) > 0 && eq(l[0], Num(1)):
-			p.explainsearch()
-			continue
-		case len(l) > 0 && eq(l[0], Num(2)):
-			p.dumposearch()
-			continue
-		case len(l) > 0 && eq(l[0], Atom("HELP")):
-			p.help()
-			continue
-		case len(l) > 0 && (eq(l[0], Atom("THANKS")) ||
-			(eq(l[0], Atom("THANK")) && len(l) > 1 && eq(l[1], Atom("YOU")))):
-			p.msg(1, "You're welcome!", T, T)
-			return nil, false // NOPRINT('LOGOUT) ALSO EXIT(NIL)
-		}
-		return l, true
+// getquest is GETQUEST for one line. It returns the question, or false
+// when the line was a command (HELP, 1, 2, a Lisp form, or thank you).
+func (p *PS) getquest(line string) (List, bool) {
+	if strings.HasPrefix(strings.TrimSpace(line), "(") {
+		// CONSP L[1]: the original EVALed it as Lisp (a back door for
+		// the author). There is no Lisp here.
+		p.msg("[no Lisp in this port]", T)
+		return nil, false
 	}
+	l := lineread(line)
+	switch {
+	case len(l) > 0 && eq(l[0], Num(1)):
+		p.explainsearch()
+		return nil, false
+	case len(l) > 0 && eq(l[0], Num(2)):
+		p.dumposearch()
+		return nil, false
+	case len(l) > 0 && eq(l[0], Atom("HELP")):
+		p.help()
+		return nil, false
+	case len(l) > 0 && (eq(l[0], Atom("THANKS")) ||
+		(eq(l[0], Atom("THANK")) && len(l) > 1 && eq(l[1], Atom("YOU")))):
+		p.msg(1, "You're welcome!", T, T)
+		p.done = true // NOPRINT('LOGOUT) ALSO EXIT(NIL)
+		return nil, false
+	}
+	return l, true
 }
 
-var helped bool
-
 func (p *PS) help() {
-	if p.version == "jun" && helped {
+	if p.version == "jun" && p.helped {
 		p.msg("Sorry.", T)
 		return
 	}
-	helped = true
+	p.helped = true
 	p.msg(T, psHLP)
 }
 
@@ -491,6 +501,7 @@ func main() {
 	version := flag.String("version", "jun", "program version: jun (5 rules, as in the paper) or oct (Oct 1980, rules 1-3 removed)")
 	echo := flag.Bool("e", false, "echo input lines (for replaying scripts)")
 	treeFile := flag.String("tree", "", "load a different TRUTH.LSP")
+	httpAddr := flag.String("http", "", "serve the web version on this address, e.g. 127.0.0.1:8080")
 	flag.Parse()
 	src := truthLSP
 	if *treeFile != "" {
@@ -509,6 +520,10 @@ func main() {
 	if *version != "jun" && *version != "oct" {
 		fmt.Fprintln(os.Stderr, "-version must be jun or oct")
 		os.Exit(2)
+	}
+	if *httpAddr != "" {
+		serve(*httpAddr, tree, *version)
+		return
 	}
 	p := &PS{tree: tree, version: *version, echo: *echo,
 		out: bufio.NewWriter(os.Stdout), in: bufio.NewScanner(os.Stdin)}

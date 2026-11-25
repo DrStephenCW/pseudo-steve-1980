@@ -27,6 +27,10 @@ a row land on the same answer, it guesses that it misunderstood one of them.
     ./ps -version oct      # October 1980, rules 1-3 removed
     ./ps -e < testdata/paper.in
 
+For the web version, run `./ps -http 127.0.0.1:8080` and open that address.
+See [`port/deploy/README.md`](port/deploy/README.md) for hosting it behind
+nginx with systemd.
+
 Type `help` for help, `1` to see the last search path, `2` to see the
 two-search memory, and `thank you` to quit.
 
@@ -80,6 +84,7 @@ as it is, so the answers are the ones students got.
   STEVES. The 1980 reader would have turned `'` into QUOTE.
 - In 1980, a line starting with `(` was evaluated as Lisp (a back door for
   the author). The port ignores it.
+- `ps -http` serves the same program as a web page, one session per visitor.
 - The 1980 program logged every session to a numbered file. That is where
   the `.QRZ` files come from. The port does not log.
 - The tree is the May 18 `TRUTH.LSP`, which the October copy matches. The

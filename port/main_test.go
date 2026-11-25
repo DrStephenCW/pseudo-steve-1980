@@ -19,7 +19,6 @@ func TestPaperRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	helped = false
 	p := &PS{tree: tree, version: "jun", echo: true,
 		out: bufio.NewWriter(&out), in: bufio.NewScanner(strings.NewReader(string(in)))}
 	p.Run()
