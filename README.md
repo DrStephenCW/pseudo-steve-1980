@@ -46,8 +46,10 @@ write-up. All 24 answers match the paper word for word.
 
 ## What's here
 
-`original/` holds the files exactly as recovered from a 1980 TOPS-10 BACKUP
-tape (UCI account [2360,4]). The `.RNO.md` files are modern Markdown
+`original/` holds the files as recovered from a 1980 TOPS-10 BACKUP tape
+(UCI account [2360,4]), byte for byte except for one change: the real 1980
+phone numbers (two office extensions and the computing center) have been
+replaced with 555 numbers everywhere, including inside `PS.EXE`. The `.RNO.md` files are modern Markdown
 renderings of the RUNOFF sources.
 
 | File | What it is |
@@ -97,8 +99,7 @@ as it is, so the answers are the ones students got.
 - The tree is the May 18 `TRUTH.LSP`, which the October copy matches. The
   paper's tree was a little different: it knew WHATS, and this one doesn't.
 
-The port's copy of the tree (`port/TRUTH.LSP`) changes the two 1980 office
-phone numbers to 555 numbers. Otherwise it is the 1980 tree.
+The phone numbers in the tree are 555 numbers, not the real 1980 ones.
 
 ## Later
 
