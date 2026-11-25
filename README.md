@@ -64,7 +64,7 @@ renderings of the RUNOFF sources.
 | `*.QRZ` | eight real student sessions, 7-9 April 1980 |
 | `NPS.LOG`, `PS.LOG`, `GRANGE.LOG`, `NGRANG.LOG`, `LONG.LOG`, `621.LOG` | more sessions |
 | `PS1.LOG` | an April session Steve mailed to Granger for review, with Granger's comments and Steve's replies |
-| `1980-03-first-try/` | March 1980 first attempt, script-based (`PSTEVE.MLI`) |
+| `1980-03-first-try/` | March 1980 first attempt, built on the New U story classifier (`PSTEVE.MLI`); see its README |
 | `OLDPS/`, `versions/` | older copies, by date |
 
 The program went through four generations:
