@@ -97,7 +97,8 @@ as it is, so the answers are the ones students got.
 - The tree is the May 18 `TRUTH.LSP`, which the October copy matches. The
   paper's tree was a little different: it knew WHATS, and this one doesn't.
 
-The phone numbers in the tree are 1980 UC Irvine office extensions.
+The port's copy of the tree (`port/TRUTH.LSP`) changes the two 1980 office
+phone numbers to 555 numbers. Otherwise it is the 1980 tree.
 
 ## Later
 
