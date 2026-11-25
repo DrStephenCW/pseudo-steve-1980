@@ -1,2 +1,4 @@
 port/ps
 port/ps.exe
+port/site/ps.wasm
+port/site/wasm_exec.js

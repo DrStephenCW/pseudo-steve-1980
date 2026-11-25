@@ -15,10 +15,8 @@ package main
 import (
 	"bufio"
 	_ "embed"
-	"flag"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 	"unicode"
@@ -166,6 +164,37 @@ func loadTree(src string) (map[Atom]List, error) {
 }
 
 // ---------------------------------------------------------------------------
+// Trace: what one question did, for the visual (WebAssembly) version.
+
+// Step is one move down the tree.
+type Step struct {
+	From    string `json:"from"`    // node we were at
+	Index   int    `json:"index"`   // which branch of it
+	Child   string `json:"child"`   // node we moved to
+	Key     string `json:"key"`     // path of branch indexes from TOP, e.g. "/2/0"
+	Keyword string `json:"keyword"` // the keyword that matched
+	Via     string `json:"via"`     // "question" or "context" (previous search)
+	Quirk   bool   `json:"quirk"`   // a second move in one pass (the MLISP FOR/UNTIL quirk)
+}
+
+type Trace struct {
+	Words   []string `json:"words"`   // the question as atoms
+	Context []string `json:"context"` // keywords on the previous search path
+	Steps   []Step   `json:"steps"`
+	End     string   `json:"end"`    // node where the search stopped
+	EndKey  string   `json:"endKey"` // its path
+	Leaf    bool     `json:"leaf"`   // stopped at a leaf
+	Used    bool     `json:"used"`   // at least one word of the question was used
+	Hit     bool     `json:"hit"`    // Leaf && Used
+	Answer  string   `json:"answer"` // text of the node where it stopped
+	Unused  []string `json:"unused"` // words of the question never used
+	Rule    int      `json:"rule"`   // inference rule that chose the reply
+	Same    bool     `json:"same"`   // same answer as the previous question
+	PrevHit *bool    `json:"prevHit"`
+	Command string   `json:"command,omitempty"` // help, 1, 2, thanks, lisp
+}
+
+// ---------------------------------------------------------------------------
 // The program (names follow PS.MLI)
 
 type PS struct {
@@ -174,8 +203,9 @@ type PS struct {
 	out     *bufio.Writer
 	in      *bufio.Scanner
 	echo    bool
-	helped  bool // HELPED
-	done    bool // said thank you
+	helped  bool   // HELPED
+	done    bool   // said thank you
+	trace   *Trace // when non-nil, look and analyze record what they did
 
 	L       List   // the question (SPECIAL L)
 	current Atom   // CURRENT
@@ -216,7 +246,13 @@ func (p *PS) Line(line string) bool {
 	if p.echo {
 		p.msg(line, T)
 	}
+	if p.trace != nil {
+		*p.trace = Trace{}
+	}
 	if l, ok := p.getquest(line); ok {
+		if p.trace != nil {
+			p.trace.Words = atomsOf(l)
+		}
 		p.L = l
 		p.current = "TOP"
 		p.search = nil
@@ -266,6 +302,14 @@ func sameAnswer(a, b List) bool {
 
 func (p *PS) analyze() {
 	o1, o2 := p.os(0), p.os(1)
+	if tr := p.trace; tr != nil {
+		tr.Same = sameAnswer(o1, o2)
+		if len(o2) > 0 {
+			h := lastTrue(o2)
+			tr.PrevHit = &h
+		}
+		tr.Rule = p.rule(o1, o2)
+	}
 	if p.version == "oct" {
 		// RULES 1 & 2 & 3 WERE BORING -- DELETED OCT 21, 1980
 		if lastTrue(o1) { // RULE 4
@@ -295,6 +339,27 @@ func (p *PS) analyze() {
 	}
 }
 
+// rule says which inference rule analyze will use (same tests, same order).
+func (p *PS) rule(o1, o2 List) int {
+	if p.version == "oct" {
+		if lastTrue(o1) {
+			return 4
+		}
+		return 5
+	}
+	switch {
+	case sameAnswer(o1, o2) && lastTrue(o1) && lastTrue(o2):
+		return 1
+	case sameAnswer(o1, o2) && !lastTrue(o1) && !lastTrue(o2):
+		return 2
+	case !lastTrue(o1):
+		return 3
+	case lastTrue(o1):
+		return 4
+	}
+	return 5
+}
+
 // lineread approximates UCI Lisp LINEREAD: words become upper-case atoms,
 // digits become numbers. Punctuation is dropped (the 1980 reader would have
 // turned ' into QUOTE and choked on some marks; the help text asks users
@@ -317,27 +382,38 @@ func (p *PS) getquest(line string) (List, bool) {
 	if strings.HasPrefix(strings.TrimSpace(line), "(") {
 		// CONSP L[1]: the original EVALed it as Lisp (a back door for
 		// the author). There is no Lisp here.
+		p.cmd("lisp")
 		p.msg("[no Lisp in this port]", T)
 		return nil, false
 	}
 	l := lineread(line)
 	switch {
 	case len(l) > 0 && eq(l[0], Num(1)):
+		p.cmd("1")
 		p.explainsearch()
 		return nil, false
 	case len(l) > 0 && eq(l[0], Num(2)):
+		p.cmd("2")
 		p.dumposearch()
 		return nil, false
 	case len(l) > 0 && eq(l[0], Atom("HELP")):
+		p.cmd("help")
 		p.help()
 		return nil, false
 	case len(l) > 0 && (eq(l[0], Atom("THANKS")) ||
 		(eq(l[0], Atom("THANK")) && len(l) > 1 && eq(l[1], Atom("YOU")))):
 		p.msg(1, "You're welcome!", T, T)
+		p.cmd("thanks")
 		p.done = true // NOPRINT('LOGOUT) ALSO EXIT(NIL)
 		return nil, false
 	}
 	return l, true
+}
+
+func (p *PS) cmd(c string) {
+	if p.trace != nil {
+		p.trace.Command = c
+	}
 }
 
 func (p *PS) help() {
@@ -373,18 +449,32 @@ func xremove(x any, l List) List {
 func (p *PS) look() {
 	var more, done, used bool
 	z := p.eval(p.current)
+	tr := p.trace
+	zName, zKey := string(p.current), ""
+	if tr != nil {
+		tr.Context = atomsOf(p.os(0))
+	}
 	for {
 		more = false
+		passName, passKey := zName, zKey
+		step := func(i int, child Atom, kw any, via string) {
+			zName, zKey = string(child), fmt.Sprintf("%s/%d", passKey, i)
+			if tr != nil {
+				tr.Steps = append(tr.Steps, Step{From: passName, Index: i, Child: string(child),
+					Key: zKey, Keyword: sprint(kw), Via: via, Quirk: more})
+			}
+		}
 		if len(z) == 1 && len(z[0].(List)) > 1 {
 			if _, ok := z[0].(List)[1].(Str); ok {
 				done = true
 			}
 		}
 		if !done {
-			for _, a := range z {
+			for i, a := range z {
 				assoc := a.(List)
 				for _, kw := range assoc[1:] {
 					if memq(kw, p.L) {
+						step(i, assoc[0].(Atom), kw, "question")
 						z = p.eval(assoc[0].(Atom))
 						p.current = kw.(Atom)
 						p.search = append(List{kw}, p.search...)
@@ -395,16 +485,17 @@ func (p *PS) look() {
 						break
 					}
 				}
-				if more && !*quirk {
+				if more && !strict {
 					break
 				}
 			}
 			if !more {
 				prev := p.os(0)
-				for _, a := range z {
+				for i, a := range z {
 					assoc := a.(List)
 					for _, kw := range assoc[1:] {
 						if memq(kw, prev) {
+							step(i, assoc[0].(Atom), kw, "context")
 							z = p.eval(assoc[0].(Atom))
 							p.current = kw.(Atom)
 							p.search = append(List{kw}, p.search...)
@@ -416,7 +507,7 @@ func (p *PS) look() {
 							break
 						}
 					}
-					if more && !*quirk {
+					if more && !strict {
 						break
 					}
 				}
@@ -436,6 +527,26 @@ func (p *PS) look() {
 	}
 	// SEARCH _ NCONC(SEARCH, <IF USED THEN DONE ELSE NIL>)
 	p.search = append(p.search, used && done)
+	if tr != nil {
+		tr.End, tr.EndKey = zName, zKey
+		tr.Leaf, tr.Used, tr.Hit = done, used, used && done
+		if s, ok := first(p.search).(Str); ok {
+			tr.Answer = string(s)
+		}
+		tr.Unused = atomsOf(p.L)
+	}
+}
+
+// atomsOf lists the atoms and numbers in l, as strings.
+func atomsOf(l List) []string {
+	out := []string{}
+	for _, e := range l {
+		switch e.(type) {
+		case Atom, Num:
+			out = append(out, sprint(e))
+		}
+	}
+	return out
 }
 
 func (p *PS) say(x any) {
@@ -495,37 +606,5 @@ func (p *PS) dumposearch() {
 	}
 }
 
-var quirk = flag.Bool("strict", true, "keep the 1980 MLISP FOR/UNTIL behaviour in LOOK")
-
-func main() {
-	version := flag.String("version", "jun", "program version: jun (5 rules, as in the paper) or oct (Oct 1980, rules 1-3 removed)")
-	echo := flag.Bool("e", false, "echo input lines (for replaying scripts)")
-	treeFile := flag.String("tree", "", "load a different TRUTH.LSP")
-	httpAddr := flag.String("http", "", "serve the web version on this address, e.g. 127.0.0.1:8080")
-	flag.Parse()
-	src := truthLSP
-	if *treeFile != "" {
-		b, err := os.ReadFile(*treeFile)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		src = strings.ReplaceAll(string(b), "\r", "")
-	}
-	tree, err := loadTree(src)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "TRUTH.LSP:", err)
-		os.Exit(1)
-	}
-	if *version != "jun" && *version != "oct" {
-		fmt.Fprintln(os.Stderr, "-version must be jun or oct")
-		os.Exit(2)
-	}
-	if *httpAddr != "" {
-		serve(*httpAddr, tree, *version)
-		return
-	}
-	p := &PS{tree: tree, version: *version, echo: *echo,
-		out: bufio.NewWriter(os.Stdout), in: bufio.NewScanner(os.Stdin)}
-	p.Run()
-}
+// strict keeps the 1980 MLISP FOR/UNTIL behaviour in LOOK.
+var strict = true

@@ -1,3 +1,5 @@
+//go:build !js
+
 package main
 
 // Web mode: ps -http 127.0.0.1:8080
@@ -14,6 +16,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"log"
+	"mime"
 	"net/http"
 	"sync"
 	"time"
@@ -144,18 +147,24 @@ func (sv *server) say(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, reply{Text: text, Done: done})
 }
 
-func serve(addr string, tree map[Atom]List, version string) {
+func serve(addr string, tree map[Atom]List, version, site string) {
 	sv := &server{tree: tree, version: version, s: map[string]*session{}}
 	go sv.reap()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(indexHTML)
-	})
+	if site != "" {
+		// The visual version: static files built by build-site.sh.
+		mime.AddExtensionType(".wasm", "application/wasm")
+		mux.Handle("/", http.FileServer(http.Dir(site)))
+	} else {
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/" {
+				http.NotFound(w, r)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write(indexHTML)
+		})
+	}
 	mux.HandleFunc("/start", sv.start)
 	mux.HandleFunc("/say", sv.say)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok\n")) })

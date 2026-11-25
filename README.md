@@ -27,9 +27,16 @@ a row land on the same answer, it guesses that it misunderstood one of them.
     ./ps -version oct      # October 1980, rules 1-3 removed
     ./ps -e < testdata/paper.in
 
-For the web version, run `./ps -http 127.0.0.1:8080` and open that address.
-See [`port/deploy/README.md`](port/deploy/README.md) for hosting it behind
-nginx with systemd.
+There are two web versions. The visual one runs the program in the browser
+as WebAssembly and shows its working: the words it used, the path through
+the tree, its memory, and which inference rule chose the reply.
+
+    ./build-site.sh
+    go run . -http 127.0.0.1:8080 -site site     # then open http://127.0.0.1:8080/
+
+The plain one is a terminal page served by `./ps -http 127.0.0.1:8080`.
+See [`port/deploy/README.md`](port/deploy/README.md) for hosting either one
+behind nginx.
 
 Type `help` for help, `1` to see the last search path, `2` to see the
 two-search memory, and `thank you` to quit.

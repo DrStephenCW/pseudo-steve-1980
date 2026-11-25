@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pseudo-Steve</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: a DEC terminal on the left, the program's working on the right,
+   the whole knowledge tree underneath. */
+:root {
+  --paper: #eef1ee;      /* page */
+  --panel: #f9faf8;      /* panels */
+  --ink: #1b2420;        /* text */
+  --mute: #5d6b64;       /* secondary text */
+  --rule: #cdd6d0;       /* borders */
+  --crt: #0e1a14;        /* terminal glass */
+  --phos: #9fe8a8;       /* terminal text */
+  --phos-dim: #5f9c69;
+  --you: #e0a030;        /* the user's words, question keywords */
+  --ctx: #2f6fb3;        /* keywords taken from context */
+  --hit: #2c8a4a;
+  --miss: #b0522c;
+  --mark: #fff3c4;       /* highlighted rows */
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121815; --panel: #18201c; --ink: #dde6e0; --mute: #93a39a; --rule: #2c3832;
+    --crt: #07100b; --phos: #9fe8a8; --phos-dim: #5f9c69; --you: #f0b54a; --ctx: #79aef0;
+    --hit: #5cc47c; --miss: #e08a62; --mark: #3a3418; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121815; --panel: #18201c; --ink: #dde6e0; --mute: #93a39a; --rule: #2c3832;
+  --crt: #07100b; --phos: #9fe8a8; --phos-dim: #5f9c69; --you: #f0b54a; --ctx: #79aef0;
+  --hit: #5cc47c; --miss: #e08a62; --mark: #3a3418; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); }
+[hidden] { display: none !important; }
+.wrap { max-width: 78rem; margin: 0 auto; padding-block: 1.5rem 3rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 2rem; letter-spacing: .01em; }
+h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); }
+p { margin: 0; }
+a { color: var(--ctx); }
+code, .mono { font-family: var(--mono); font-size: .92em; }
+
+header.top { display: grid; gap: .5rem; margin-bottom: 1.25rem; max-width: 62rem; }
+header.top .sub { color: var(--mute); max-width: 65ch; }
+.legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .85rem; color: var(--mute); }
+.legend span { display: inline-flex; align-items: center; gap: .35rem; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: grid; gap: 1rem; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; min-width: 0; display: grid; gap: .75rem; }
+
+/* terminal */
+.tty { background: var(--crt); color: var(--phos); border-radius: 6px; padding: 1rem;
+  font: 14px/1.45 var(--mono); min-width: 0; display: grid; gap: .5rem; }
+.tty .bar { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap;
+  color: var(--phos-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+#out { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; height: 24rem; overflow-y: auto; font: inherit; }
+#out .you { color: var(--you); }
+#f { display: flex; gap: .5ch; align-items: baseline; }
+#line { flex: 1; min-width: 0; font: inherit; color: var(--you); background: transparent; border: 0;
+  border-bottom: 1px solid var(--phos-dim); outline: none; padding: 2px 0; }
+#line:focus-visible { border-bottom-color: var(--you); }
+.tries { display: flex; flex-wrap: wrap; gap: .35rem; }
+.tries button, .btn { font: 12px var(--mono); color: var(--phos); background: transparent;
+  border: 1px solid var(--phos-dim); border-radius: 3px; padding: 2px 8px; cursor: pointer; }
+.tries button:hover, .tries button:focus-visible { border-color: var(--phos); outline: none; }
+.controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-size: 12px; color: var(--phos-dim); }
+.controls select { font: 12px var(--mono); color: var(--phos); background: var(--crt); border: 1px solid var(--phos-dim); border-radius: 3px; padding: 2px 4px; }
+
+/* chips */
+.kw { display: inline-block; font: 12px/1.6 var(--mono); padding: 0 6px; border-radius: 3px;
+  border: 1px solid var(--rule); color: var(--mute); white-space: nowrap; }
+.kw.q { background: var(--you); border-color: var(--you); color: #1b1408; }
+.kw.c { background: var(--ctx); border-color: var(--ctx); color: #fff; }
+.kw.u { border-style: dashed; color: var(--ink); }
+.pill { font: 600 11px/1.6 var(--body); text-transform: uppercase; letter-spacing: .06em;
+  padding: 1px 8px; border-radius: 999px; color: #fff; }
+.pill.hit { background: var(--hit); } .pill.miss { background: var(--miss); }
+.words { display: flex; flex-wrap: wrap; gap: .3rem; }
+
+/* step list */
+ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: .5rem; counter-reset: s; }
+ol.steps li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: .5rem; }
+ol.steps li::before { counter-increment: s; content: counter(s); font: 600 12px/1.6rem var(--mono);
+  text-align: center; border-radius: 50%; background: var(--rule); color: var(--ink); height: 1.6rem; }
+ol.steps li.end::before { content: "\25A0"; background: transparent; }
+.node { font: 600 13px var(--mono); }
+.note { color: var(--mute); font-size: .9rem; }
+.empty { color: var(--mute); font-style: italic; }
+
+/* memory */
+.mem { display: grid; gap: .5rem; }
+.mem .slot { border: 1px solid var(--rule); border-radius: 4px; padding: .5rem .6rem; display: grid; gap: .3rem; }
+.mem .slot b { font: 600 12px var(--mono); color: var(--mute); }
+.path { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; font: 12px var(--mono); }
+.path .sep { color: var(--mute); }
+
+/* rules */
+ol.rules { margin: 0; padding: 0; list-style: none; display: grid; gap: .4rem; }
+ol.rules li { border: 1px solid var(--rule); border-radius: 4px; padding: .5rem .6rem; display: grid; gap: .2rem; }
+ol.rules li .h { display: flex; gap: .5rem; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+ol.rules li .h strong { font-family: var(--display); font-weight: 600; }
+ol.rules li .st { font: 12px var(--mono); color: var(--mute); }
+ol.rules li.fired { border-color: var(--you); background: var(--mark); }
+ol.rules li.fired .st { color: var(--ink); font-weight: 600; }
+ol.rules li.deleted { opacity: .55; }
+ol.rules li.deleted strong { text-decoration: line-through; }
+ol.rules .resp { font-size: .9rem; color: var(--mute); }
+
+/* tree */
+.treebox { overflow-x: auto; }
+ul.tree { list-style: none; margin: 0; padding-left: 1.1rem; border-left: 1px dotted var(--rule); }
+ul.tree.root { padding-left: 0; border-left: 0; }
+ul.tree li { margin: .15rem 0; }
+.row { display: flex; flex-wrap: wrap; gap: .3rem; align-items: baseline; padding: 1px 4px; border-radius: 3px; }
+.row.on { background: var(--mark); }
+.row button.tog { font: 12px var(--mono); width: 1.3rem; background: none; border: 0; color: var(--mute); cursor: pointer; padding: 0; }
+.row .nm { font: 600 13px var(--mono); }
+.row .txt { font-style: italic; color: var(--mute); font-size: .9rem; flex-basis: 100%; padding-left: 1.6rem; }
+.row.end .nm::after { content: " \25C0 stopped here"; font: 600 11px var(--body); color: var(--you); }
+.tree-tools { display: flex; gap: .5rem; flex-wrap: wrap; }
+.tree-tools button { font: 12px var(--body); background: none; border: 1px solid var(--rule); border-radius: 3px; padding: 2px 8px; color: var(--ink); cursor: pointer; }
+
+section.how { margin-top: 1.5rem; display: grid; gap: .75rem; max-width: 65ch; }
+section.how h2 { color: var(--ink); }
+footer { margin-top: 2rem; color: var(--mute); font-size: .85rem; display: grid; gap: .3rem; }
+#loading { font: 14px var(--mono); color: var(--phos-dim); }
+@media (prefers-reduced-motion: no-preference) { .row.on, ol.rules li.fired { transition: background .3s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Pseudo-Steve</h1>
+    <p class="sub">In spring 1980 Steve Willson was the TA for ICS 145, the compiler construction lab at UC Irvine.
+      He wrote Pseudo-Steve in MLISP on the campus DECsystem-10 to answer the routine questions about the course.
+      This is the same program, compiled to WebAssembly, with its working shown: which words it used, which branch
+      of the knowledge tree it followed, what it remembered, and which inference rule picked the reply.</p>
+    <div class="legend">
+      <span><i class="kw q">WORD</i> found in your question</span>
+      <span><i class="kw c">WORD</i> taken from the previous search</span>
+      <span><i class="kw u">WORD</i> in your question but never used</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="stack">
+      <div class="tty" aria-label="Terminal">
+        <div class="bar"><span>UCI DECsystem-1070 &middot; TTY103</span><span id="vlabel">PS.MLI, 12 Jun 1980</span></div>
+        <pre id="out" aria-live="polite"><span id="loading">Loading Pseudo-Steve…</span></pre>
+        <form id="f" autocomplete="off" hidden>
+          <label for="line">Yes?</label>
+          <input id="line" maxlength="500" spellcheck="false" autocapitalize="off">
+        </form>
+        <div class="tries" id="tries" aria-label="Questions from the 1980 paper"></div>
+        <div class="controls">
+          <label for="ver">Version</label>
+          <select id="ver">
+            <option value="jun">June 1980, five rules</option>
+            <option value="oct">October 1980, rules 1-3 removed</option>
+          </select>
+          <button class="btn" id="again" type="button">Start over</button>
+        </div>
+      </div>
+
+      <div class="panel" id="memPanel">
+        <h2>Memory</h2>
+        <p class="note">The program keeps its last two searches (OSEARCH). The newer one supplies context
+          when your next question doesn't say enough, and the rules compare the two.</p>
+        <div class="mem" id="mem"><p class="empty">Nothing yet. Ask a question.</p></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="panel">
+        <h2>This answer, step by step</h2>
+        <div id="trace"><p class="empty">Ask a question, or click one of the questions from the 1980 paper under the terminal.</p></div>
+      </div>
+      <div class="panel">
+        <h2>Inference rules</h2>
+        <p class="note">After each search, the rules are checked in order and the first that fits picks the reply.
+          A <b>hit</b> means the search reached a leaf using at least one of your words.</p>
+        <ol class="rules" id="rules"></ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:1rem">
+    <div class="tree-tools">
+      <h2 style="flex:1">The knowledge tree (TRUTH.LSP)</h2>
+      <button type="button" id="expand">Expand all</button>
+      <button type="button" id="collapse">Show only the last path</button>
+    </div>
+    <p class="note">Each node lists its branches with the keywords that lead to them. The text in italics is what
+      the node says when the search stops there. The search starts at TOP, takes the first branch whose keyword
+      appears in your question, and repeats until nothing matches.</p>
+    <div class="treebox"><ul class="tree root" id="tree"></ul></div>
+  </div>
+
+  <section class="how">
+    <h2>How it works</h2>
+    <p><b>The tree.</b> Steve built it by hand from the course syllabus: 83 nodes, general topics near the top
+      (the class, assignments, Steve, Ken) and specific facts at the leaves.</p>
+    <p><b>The search.</b> Starting at TOP, the program looks for a branch keyword among your words. When one
+      matches, it moves down and crosses that word off. If none of your words match, it tries the keywords from
+      the previous search, which is how "how about assignment two" works after "when is assignment three due".</p>
+    <p><b>The rules.</b> The June 1980 version compares the last two searches to guess what went wrong. Two hits
+      on the same answer suggest a misunderstanding. Two misses on the same node suggest missing context.
+      A single miss gets a hint about what the node knows. In October 1980 Steve deleted rules 1 to 3
+      ("RULES 1 &amp; 2 &amp; 3 WERE BORING").</p>
+    <p><b>A 1980 quirk, kept.</b> In MLISP's <code>FOR … UNTIL</code>, the stop test ends only the inner loop, so after
+      a match the first keyword of each later branch is still tried. Steps marked "quirk" come from that.</p>
+  </section>
+
+  <footer>
+    <p>Source, the 1980 originals, and the paper:
+      <a href="https://github.com/DrStephenCW/pseudo-steve-1980">github.com/DrStephenCW/pseudo-steve-1980</a></p>
+    <p>This recovery project was done with Claude Opus 5.5 Medium Effort guided by Stephen Clarke-Willson.</p>
+  </footer>
+</div>
+
+<script src="wasm_exec.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const out = $('out'), form = $('f'), input = $('line'), ver = $('ver');
+  const TRIES = ['when is the compiler due', 'when is assignment four due', 'how about assignment two',
+    'due', 'due', 'what is assignment one', 'when', 'when is it due', 'who is ken', 'what is it',
+    'what is the phone number', 'where is his office'];
+  const RULES = [
+    { n: 1, name: 'Same answer, hit twice', cond: 'The last two searches reached the same answer, and both were hits.',
+      resp: 'Either I just responded to that or we’re not communicating here…' },
+    { n: 2, name: 'Same answer, missed twice', cond: 'The last two searches stopped at the same place, and both were misses.',
+      resp: 'I think you are leaving out some contextual information…' },
+    { n: 3, name: 'Missed', cond: 'This search was a miss.',
+      resp: 'Maybe it will help if I tell you that ‹what the node knows›' },
+    { n: 4, name: 'Hit', cond: 'This search was a hit.', resp: '‹the answer›' },
+    { n: 5, name: 'Nothing else fits', cond: 'Fallback.',
+      resp: 'June: “I can’t figure out the answer, sorry, next question!” October: “I don’t know the answer.”' },
+  ];
+  let tree = null, lastKey = null, lastSteps = [], version = 'jun', busy = false;
+
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const chip = (w, kind) => el('i', 'kw' + (kind ? ' ' + kind : ''), w);
+
+  function write(text) {
+    const p = 'Yes? ';
+    if (text.endsWith(p)) { out.append(text.slice(0, -p.length)); form.hidden = false; }
+    else { out.append(text); form.hidden = true; }
+    out.scrollTop = out.scrollHeight;
+  }
+
+  // ---------- tree ----------
+  function renderTree() {
+    const root = $('tree'); root.textContent = '';
+    root.append(nodeLi(tree, '', null));
+    showPath(false);
+  }
+  function nodeLi(n, key, kws) {
+    const li = el('li'); li.dataset.key = key;
+    const row = el('div', 'row');
+    const kids = n.branches || [];
+    const tog = el('button', 'tog', kids.length ? '▸' : '·');
+    tog.type = 'button';
+    tog.setAttribute('aria-label', kids.length ? 'Show or hide ' + n.name : n.name + ' is a leaf');
+    row.append(tog, el('span', 'nm', n.name));
+    if (kws) kws.forEach(k => { const c = chip(k); c.dataset.kw = k; row.append(c); });
+    if (n.text) row.append(el('span', 'txt', '“' + n.text.replace(/\s*\n\s*/g, ' ') + '”'));
+    li.append(row);
+    if (kids.length) {
+      const ul = el('ul', 'tree'); ul.hidden = true;
+      kids.forEach((b, i) => ul.append(nodeLi(b.child, key + '/' + i, b.keywords)));
+      li.append(ul);
+      tog.addEventListener('click', () => { ul.hidden = !ul.hidden; tog.textContent = ul.hidden ? '▸' : '▾'; });
+    }
+    return li;
+  }
+  function setOpen(li, open) {
+    const ul = li.querySelector(':scope > ul'); if (!ul) return;
+    ul.hidden = !open; li.querySelector(':scope > .row .tog').textContent = open ? '▾' : '▸';
+  }
+  function showPath(scroll) {
+    const root = $('tree');
+    root.querySelectorAll('.row').forEach(r => r.classList.remove('on', 'end'));
+    root.querySelectorAll('.kw').forEach(c => c.className = 'kw');
+    root.querySelectorAll('li').forEach(li => setOpen(li, false));
+    setOpen(root.firstElementChild, true);
+    const byKey = (k) => root.querySelector('li[data-key="' + k + '"]');
+    byKey('').querySelector(':scope > .row').classList.add('on');
+    for (const s of lastSteps) {
+      const li = byKey(s.key); if (!li) continue;
+      let p = li.parentElement.closest('li'); while (p) { setOpen(p, true); p = p.parentElement.closest('li'); }
+      const row = li.querySelector(':scope > .row'); row.classList.add('on');
+      const c = row.querySelector('.kw[data-kw="' + CSS.escape(s.keyword) + '"]');
+      if (c) c.classList.add(s.via === 'question' ? 'q' : 'c');
+    }
+    if (lastKey != null) {
+      const li = byKey(lastKey);
+      if (li) { const row = li.querySelector(':scope > .row'); row.classList.add('end'); setOpen(li, true);
+        if (scroll) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    }
+  }
+  $('expand').addEventListener('click', () => $('tree').querySelectorAll('li').forEach(li => setOpen(li, true)));
+  $('collapse').addEventListener('click', () => showPath(true));
+
+  // ---------- trace ----------
+  function renderTrace(t, memory) {
+    const box = $('trace'); box.textContent = '';
+    if (t.command) {
+      const msg = { help: 'HELP prints the help text. No search.', '1': '1 prints the last search path (EXPLAINSEARCH).',
+        '2': '2 prints the memory of the last two searches (DUMPOSEARCH).', thanks: 'THANK YOU ends the session. In 1980 it also logged the student out.',
+        lisp: 'In 1980 a line starting with ( was evaluated as Lisp, a back door for the author. This port ignores it.' }[t.command];
+      box.append(el('p', null, msg || 'A command, not a question.'));
+      return;
+    }
+    const used = new Set(t.steps.filter(s => s.via === 'question').map(s => s.keyword));
+    const unused = new Set(t.unused);
+    const head = el('div', 'words');
+    head.append(el('span', 'note', 'Your words:'));
+    (t.words.length ? t.words : ['(none)']).forEach(w => head.append(chip(w, used.has(w) && !unused.has(w) ? 'q' : 'u')));
+    box.append(head);
+
+    const ol = el('ol', 'steps');
+    let at = 'TOP';
+    if (!t.steps.length) {
+      const li = el('li');
+      li.append(el('div', null, 'At TOP, none of the branch keywords are in your question, and there is no useful context from the previous search.'));
+      ol.append(li);
+    }
+    for (const s of t.steps) {
+      const li = el('li'); const d = el('div');
+      d.append('At ', el('span', 'node', s.from), s.via === 'question' ? ', found ' : ', nothing in your question matched, so it used ');
+      d.append(chip(s.keyword, s.via === 'question' ? 'q' : 'c'));
+      d.append(s.via === 'question' ? ' in your question' : ' from the previous search');
+      d.append(' → ', el('span', 'node', s.child));
+      if (s.quirk) d.append(el('div', 'note', 'Quirk: a second jump in the same pass, from the MLISP FOR/UNTIL behaviour.'));
+      li.append(d); ol.append(li); at = s.child;
+    }
+    const end = el('li', 'end'); const d = el('div');
+    d.append('Stopped at ', el('span', 'node', t.end), ' ', el('span', 'pill ' + (t.hit ? 'hit' : 'miss'), t.hit ? 'hit' : 'miss'));
+    const why = t.hit ? 'It reached a leaf using your words.'
+      : !t.leaf ? 'This node has branches, but none of their keywords were in your question or the context.'
+      : 'It reached a leaf, but only by context. None of your words were used, so it counts as a miss.';
+    d.append(el('div', 'note', why));
+    if (t.answer) d.append(el('div', 'note', 'The node says: “' + t.answer.replace(/\s*\n\s*/g, ' ') + '”'));
+    end.append(d); ol.append(end);
+    box.append(ol);
+    if (t.unused.length) {
+      const u = el('div', 'words'); u.append(el('span', 'note', 'Never used:')); t.unused.forEach(w => u.append(chip(w, 'u')));
+      box.append(u);
+    }
+  }
+
+  function renderMemory(memory) {
+    const box = $('mem'); box.textContent = '';
+    if (!memory.length) { box.append(el('p', 'empty', 'Nothing yet. Ask a question.')); return; }
+    memory.forEach((m, i) => {
+      const s = el('div', 'slot');
+      const h = el('div', 'words');
+      h.append(el('b', null, i === 0 ? 'OSEARCH[1]  this search' : 'OSEARCH[2]  the one before'), el('span', 'pill ' + (m.hit ? 'hit' : 'miss'), m.hit ? 'hit' : 'miss'));
+      const p = el('div', 'path'); p.append('TOP');
+      m.path.forEach(k => { p.append(el('span', 'sep', '→')); p.append(chip(k)); });
+      s.append(h, p);
+      if (m.answer) s.append(el('div', 'note', '“' + m.answer.replace(/\s*\n\s*/g, ' ') + '”'));
+      box.append(s);
+    });
+  }
+
+  function renderRules(t) {
+    const ol = $('rules'); ol.textContent = '';
+    const fired = t && !t.command ? t.rule : 0;
+    RULES.forEach(r => {
+      const li = el('li');
+      const deleted = version === 'oct' && r.n <= 3;
+      if (deleted) li.classList.add('deleted');
+      if (r.n === fired) li.classList.add('fired');
+      const h = el('div', 'h');
+      h.append(el('strong', null, 'Rule ' + r.n + '. ' + r.name));
+      let st = '';
+      if (deleted) st = 'deleted Oct 21, 1980';
+      else if (fired) st = r.n === fired ? 'fired' : r.n < fired ? 'did not fit' : 'not reached';
+      h.append(el('span', 'st', st));
+      li.append(h, el('div', null, r.cond), el('div', 'resp', 'Reply: ' + r.resp));
+      if (r.n === fired && t) {
+        const facts = [];
+        facts.push('this search: ' + (t.hit ? 'hit' : 'miss'));
+        if (t.prevHit !== null && t.prevHit !== undefined) facts.push('previous: ' + (t.prevHit ? 'hit' : 'miss'));
+        facts.push(t.same ? 'same answer as the previous search' : 'different answer from the previous search');
+        li.append(el('div', 'st', facts.join(' · ')));
+      }
+      ol.append(li);
+    });
+  }
+
+  // ---------- driving the program ----------
+  function start() {
+    version = ver.value;
+    $('vlabel').textContent = version === 'oct' ? 'PS.MLI, 23 Oct 1980' : 'PS.MLI, 12 Jun 1980';
+    const r = JSON.parse(psStart(version));
+    out.textContent = '';
+    tree = r.tree; lastKey = null; lastSteps = [];
+    write(r.text.replace(/^\n/, ''));
+    renderTree(); renderMemory([]); renderRules(null);
+    $('trace').textContent = '';
+    $('trace').append(el('p', 'empty', 'Ask a question, or click one of the questions from the 1980 paper under the terminal.'));
+  }
+  function ask(line) {
+    if (busy || form.hidden) return;
+    busy = true;
+    out.append(Object.assign(el('span', 'you'), { textContent: 'Yes? ' + line + '\n' }));
+    const r = JSON.parse(psLine(line));
+    write(r.text);
+    if (r.trace) {
+      renderTrace(r.trace, r.memory);
+      renderRules(r.trace);
+      if (!r.trace.command) { lastSteps = r.trace.steps; lastKey = r.trace.endKey; showPath(false); }
+      renderMemory(r.memory);
+    }
+    busy = false;
+  }
+  form.addEventListener('submit', (e) => { e.preventDefault(); const v = input.value; input.value = ''; ask(v); input.focus(); });
+  TRIES.forEach(q => { const b = el('button', null, q); b.type = 'button'; b.addEventListener('click', () => ask(q)); $('tries').append(b); });
+  $('again').addEventListener('click', start);
+  ver.addEventListener('change', start);
+
+  window.psReady = () => {
+    start();
+    // Open in a working state: replay the first question from the paper.
+    ask(TRIES[0]);
+  };
+  const go = new Go();
+  const load = WebAssembly.instantiateStreaming
+    ? WebAssembly.instantiateStreaming(fetch('ps.wasm'), go.importObject)
+        .catch(() => fetch('ps.wasm').then(r => r.arrayBuffer()).then(b => WebAssembly.instantiate(b, go.importObject)))
+    : fetch('ps.wasm').then(r => r.arrayBuffer()).then(b => WebAssembly.instantiate(b, go.importObject));
+  load.then(res => go.run(res.instance)).catch(err => {
+    out.textContent = 'Could not load ps.wasm: ' + err.message;
+  });
+})();
+</script>
+</body>
+</html>
