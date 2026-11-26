@@ -76,6 +76,15 @@ header.top .sub { color: var(--mute); max-width: 65ch; }
 #line { flex: 1; min-width: 0; font: inherit; color: var(--you); background: transparent; border: 0;
   border-bottom: 1px solid var(--phos-dim); outline: none; padding: 2px 0; }
 #line:focus-visible { border-bottom-color: var(--you); }
+.prompts { display: grid; gap: .45rem; border-top: 1px solid var(--phos-dim); padding-top: .6rem; }
+.plabel { color: var(--phos-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.demos { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .4rem; }
+.demos button { text-align: left; font: 12px/1.35 var(--mono); color: var(--phos); background: transparent;
+  border: 1px solid var(--phos-dim); border-radius: 4px; padding: .4rem .55rem; cursor: pointer; display: grid; gap: .15rem; align-content: start; }
+.demos button b { color: var(--you); font-weight: 600; }
+.demos button span { color: var(--phos-dim); }
+.demos button:hover, .demos button:focus-visible { border-color: var(--phos); outline: none; }
+.demos button:disabled { opacity: .5; cursor: default; }
 .tries { display: flex; flex-wrap: wrap; gap: .35rem; }
 .tries button, .btn { font: 12px var(--mono); color: var(--phos); background: transparent;
   border: 1px solid var(--phos-dim); border-radius: 3px; padding: 2px 8px; cursor: pointer; }
@@ -168,7 +177,12 @@ footer { margin-top: 2rem; color: var(--mute); font-size: .85rem; display: grid;
           <label for="line">Yes?</label>
           <input id="line" maxlength="500" spellcheck="false" autocapitalize="off">
         </form>
-        <div class="tries" id="tries" aria-label="Questions from the 1980 paper"></div>
+        <div class="prompts">
+          <div class="plabel">Watch it reason (each demo starts a fresh session)</div>
+          <div class="demos" id="demos"></div>
+          <div class="plabel">Or ask about the course</div>
+          <div class="tries" id="tries"></div>
+        </div>
         <div class="controls">
           <label for="ver">Version</label>
           <select id="ver">
@@ -190,7 +204,7 @@ footer { margin-top: 2rem; color: var(--mute); font-size: .85rem; display: grid;
     <div class="stack">
       <div class="panel">
         <h2>This answer, step by step</h2>
-        <div id="trace"><p class="empty">Ask a question, or click one of the questions from the 1980 paper under the terminal.</p></div>
+        <div id="trace"><p class="empty">Ask a question, or pick a demo under the terminal.</p></div>
       </div>
       <div class="panel">
         <h2>Inference rules</h2>
@@ -240,9 +254,18 @@ footer { margin-top: 2rem; color: var(--mute); font-size: .85rem; display: grid;
 (() => {
   const $ = (id) => document.getElementById(id);
   const out = $('out'), form = $('f'), input = $('line'), ver = $('ver');
-  const TRIES = ['when is the compiler due', 'when is assignment four due', 'how about assignment two',
-    'due', 'due', 'what is assignment one', 'when', 'when is it due', 'who is ken', 'what is it',
-    'what is the phone number', 'where is his office'];
+  // Short scenarios from the 1980 paper, each showing one idea.
+  const DEMOS = [
+    { title: 'A direct hit', note: 'Rule 4', qs: ['when is the compiler due'] },
+    { title: 'Context fills the gap', note: 'uses the previous search', qs: ['when is assignment three due', 'how about assignment two'] },
+    { title: 'Same answer twice', note: 'Rule 1: compiler = assignment four', qs: ['when is the compiler due', 'when is assignment four due'] },
+    { title: 'A miss gets a hint', note: 'Rule 3', qs: ['who is ken'] },
+    { title: 'Missing context', note: 'Rule 2: two misses in a row', qs: ['who is ken', 'what is it'] },
+    { title: 'Hint, then the answer', note: 'Rule 3, then 4', qs: ['what is assignment one', 'when', 'when is it due'] },
+  ];
+  const TRIES = ['when are steves office hours', 'where does the class meet', 'who teaches the class',
+    'how much money can we spend', 'is there a final exam', 'what is mini-145',
+    'will late homework be accepted', 'what is the meaning of life'];
   const RULES = [
     { n: 1, name: 'Same answer, hit twice', cond: 'The last two searches reached the same answer, and both were hits.',
       resp: 'Either I just responded to that or we’re not communicating here…' },
@@ -418,7 +441,7 @@ footer { margin-top: 2rem; color: var(--mute); font-size: .85rem; display: grid;
     write(r.text.replace(/^\n/, ''));
     renderTree(); renderMemory([]); renderRules(null);
     $('trace').textContent = '';
-    $('trace').append(el('p', 'empty', 'Ask a question, or click one of the questions from the 1980 paper under the terminal.'));
+    $('trace').append(el('p', 'empty', 'Ask a question, or pick a demo under the terminal.'));
   }
   function ask(line) {
     if (busy || form.hidden) return;
@@ -436,13 +459,27 @@ footer { margin-top: 2rem; color: var(--mute); font-size: .85rem; display: grid;
   }
   form.addEventListener('submit', (e) => { e.preventDefault(); const v = input.value; input.value = ''; ask(v); input.focus(); });
   TRIES.forEach(q => { const b = el('button', null, q); b.type = 'button'; b.addEventListener('click', () => ask(q)); $('tries').append(b); });
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+  const slow = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  DEMOS.forEach(d => {
+    const b = el('button'); b.type = 'button';
+    b.append(el('b', null, d.title), el('span', null, d.note + ' \u00B7 ' + d.qs.map(q => '\u201c' + q + '\u201d').join(' then ')));
+    b.addEventListener('click', async () => {
+      const all = document.querySelectorAll('.demos button'); all.forEach(x => x.disabled = true);
+      start();
+      for (const q of d.qs) { if (slow) await wait(500); ask(q); }
+      all.forEach(x => x.disabled = false);
+      input.focus();
+    });
+    $('demos').append(b);
+  });
   $('again').addEventListener('click', start);
   ver.addEventListener('change', start);
 
   window.psReady = () => {
     start();
-    // Open in a working state: replay the first question from the paper.
-    ask(TRIES[0]);
+    // Open in a working state: run the first demo's question.
+    ask(DEMOS[0].qs[0]);
   };
   const go = new Go();
   const load = WebAssembly.instantiateStreaming
