@@ -101,7 +101,7 @@ func main() {
 			v = "oct"
 		}
 		buf.Reset()
-		cur = &PS{tree: tree, version: v, out: bufio.NewWriter(&buf), trace: &Trace{}}
+		cur = &PS{tree: tree, version: v, out: bufio.NewWriter(&buf), trace: &Trace{}, tidy: true}
 		cur.Start()
 		return jsonValue(map[string]any{
 			"text": output(),

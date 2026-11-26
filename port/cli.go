@@ -16,6 +16,7 @@ func main() {
 	echo := flag.Bool("e", false, "echo input lines (for replaying scripts)")
 	treeFile := flag.String("tree", "", "load a different TRUTH.LSP")
 	httpAddr := flag.String("http", "", "serve the web version on this address, e.g. 127.0.0.1:8080")
+	tidy := flag.Bool("tidy", false, "drop the 1980 leading spaces before canned replies (the web versions always do)")
 	site := flag.String("site", "", "with -http, serve this directory (the visual version from build-site.sh) instead of the plain page")
 	flag.Parse()
 	src := truthLSP
@@ -40,7 +41,7 @@ func main() {
 		serve(*httpAddr, tree, *version, *site)
 		return
 	}
-	p := &PS{tree: tree, version: *version, echo: *echo,
+	p := &PS{tree: tree, version: *version, echo: *echo, tidy: *tidy,
 		out: bufio.NewWriter(os.Stdout), in: bufio.NewScanner(os.Stdin)}
 	p.Run()
 }

@@ -205,6 +205,7 @@ type PS struct {
 	echo    bool
 	helped  bool   // HELPED
 	done    bool   // said thank you
+	tidy    bool   // drop the leading spaces MSG puts before canned replies (web versions)
 	trace   *Trace // when non-nil, look and analyze record what they did
 
 	L       List   // the question (SPECIAL L)
@@ -222,7 +223,9 @@ func (p *PS) msg(args ...any) {
 		case bool:
 			p.out.WriteString("\n")
 		case int:
-			p.out.WriteString(strings.Repeat(" ", x))
+			if !p.tidy { // the 1980 indent before canned replies
+				p.out.WriteString(strings.Repeat(" ", x))
+			}
 		case string:
 			p.out.WriteString(x)
 		case Str:

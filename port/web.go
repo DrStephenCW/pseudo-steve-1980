@@ -97,7 +97,7 @@ func (sv *server) start(w http.ResponseWriter, r *http.Request) {
 	}
 	buf := &bytes.Buffer{}
 	se := &session{buf: buf, last: time.Now(),
-		ps: &PS{tree: sv.tree, version: v, out: bufio.NewWriter(buf)}}
+		ps: &PS{tree: sv.tree, version: v, out: bufio.NewWriter(buf), tidy: true}}
 	se.ps.Start()
 	id := newID()
 	sv.mu.Lock()

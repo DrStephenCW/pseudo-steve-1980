@@ -94,6 +94,8 @@ as it is, so the answers are the ones students got.
 - In 1980, a line starting with `(` was evaluated as Lisp (a back door for
   the author). The port ignores it.
 - `ps -http` serves the same program as a web page, one session per visitor.
+- The web versions drop the 1980 leading spaces before canned replies
+  (" Maybe it will help..."). The terminal keeps them; `-tidy` drops them there too.
 - The 1980 program logged every session to a numbered file. That is where
   the `.QRZ` files come from. The port does not log.
 - The tree is the May 18 `TRUTH.LSP`, which the October copy matches. The
